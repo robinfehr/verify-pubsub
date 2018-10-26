@@ -1,0 +1,14 @@
+{
+  "name": "verify-pubsub",
+  "version": "1.0.0",
+  "description": "Verify whether you encounter loss off messges in a pub sub setup.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Robin Fehr",
+  "license": "MIT",
+  "dependencies": {
+    "yargs": "^12.0.2"
+  }
+}
