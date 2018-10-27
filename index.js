@@ -2,33 +2,44 @@ const dbWrapper = require('./databases/');
 
 require('yargs') // eslint-disable-line
   .usage('Usage: $0 <command> [options]')
-  .command('publish [dbtype] [host] [port] [password] [key] [interval] ', 'Start publishing data to a key for a database type (e.g. redis) with certain throughput.', (yargs) => {
-    yargs
-      .positional('dbtype', {
-        describe: 'Set the database e.g. "redis"',
-        default: 'redis'
+  .command('publish', 'Start publishing data to a key for a database type (e.g. redis) with certain throughput.',() => {
+    yargs.option('dbtype', {
+      desc: 'Set the database e.g. "redis"',
+      alias: 'db',
+      default: 'redis',
+      demandOption: true
+    })
+      .option('host', {
+        desc: 'Set the host of the database',
+        alias: 'h',
+        default: 'localhost',
+        demandOption: true
       })
-      .positional('host', {
-        describe: 'Set the host of the database',
-        default: 'localhost'
+      .option('port', {
+        desc: 'Set the port of the database',
+        alias: 'po',
+        default: 6379,
+        demandOption: true
       })
-      .positional('port', {
-        describe: 'Set the port of the database',
-        default: 6379
+      .option('interval', {
+        desc: 'Set the interval of the publisher in [ms]',
+        alias: 'i',
+        default: 10,
+        demandOption: true
       })
-      .positional('password', {
-        describe: 'Set the password of the database',
-        default: 'admin'
+      .option('key', {
+        desc: 'Set the key for either publishing or subscribing',
+        alias: 'k',
+        default: 'foobar-[i]',
+        demandOption: true
       })
-      .positional('key', {
-        describe: 'Set the key for either publishing or subscribing',
-        default: 'fooBar'
+      .option('password', {
+        desc: 'Set the password for the database',
+        alias: 'p',
+        default: 'admin',
+        demandOption: true
       })
-      .positional('interval', {
-        describe: 'Set the interval of the publisher in [ms]',
-        default: 10
-      })
-  }, (argv) => {
+  } , (argv) => {
     const dbInstance = new dbWrapper({
       database: argv.database,
       host: argv.host,
@@ -38,28 +49,37 @@ require('yargs') // eslint-disable-line
 
     dbInstance.startPublish(argv.key, argv.interval);
   })
-  .example('$0 publish -db redis -i 10 -k someKey -p somePassword', 'start publishing to redis every 10ms with the key :"someKey[i]" where [i] will be replaced with the increment')
-  .command('subscribe [dbtype] [host] [port] [password] [key]', (yargs) => {
-    yargs
-      .positional('dbtype', {
-        describe: 'Set the database e.g. "redis"',
-        default: 'redis'
+  .example('$0 publish -dbtype redis -interval 10 -host localhost -port 6379 -password somePassword -key fooBar', 'start publishing to redis every 10ms with the key :"someKey[i]" where [i] will be replaced with the increment')
+  .command('subscribe', () => {
+    yargs.option('dbtype', {
+      desc: 'Set the database e.g. "redis"',
+      alias: 'db',
+      default: 'redis',
+      demandOption: true
+    })
+      .option('host', {
+        desc: 'Set the host of the database',
+        alias: 'h',
+        default: 'localhost',
+        demandOption: true
       })
-      .positional('host', {
-        describe: 'Set the host of the database',
-        default: 'localhost'
+      .option('port', {
+        desc: 'Set the port of the database',
+        alias: 'po',
+        default: 6379,
+        demandOption: true
       })
-      .positional('port', {
-        describe: 'Set the port of the database',
-        default: 6379
+      .option('key', {
+        desc: 'Set the key for either publishing or subscribing',
+        alias: 'k',
+        default: 'foobar-[i]',
+        demandOption: true
       })
-      .positional('password', {
-        describe: 'Set the password of the database',
-        default: 'admin'
-      })
-      .positional('key', {
-        describe: 'Set the key for either publishing or subscribing',
-        default: 'fooBar'
+      .option('password', {
+        desc: 'Set the password for the database',
+        alias: 'p',
+        default: 'admin',
+        demandOption: true
       })
   }, (argv) => {
     const dbInstance = new dbWrapper({
@@ -71,46 +91,10 @@ require('yargs') // eslint-disable-line
 
     dbInstance.startSubscribe(argv.key);
   })
-  .example('$0 subscribe redis localhost 6379 somePassword fooBar', 'start subscriber to redis for the key fooBar')
+  .example('$0 subscribe -dbtype redis -host localhost -port 6379 -password somePassword -key fooBar', 'start subscriber to redis for the key fooBar')
   .demandCommand(1, ,1 'Use either the publish or subscribe command')
   // open the help if no command was provided
   .help()
-  .option('dbtype', {
-    desc: 'Set the database e.g. "redis"',
-    alias: 'db',
-    default: 'redis',
-    demandOption: true
-  })
-  .option('host', {
-    desc: 'Set the host of the database',
-    alias: 'h',
-    default: 'localhost',
-    demandOption: true
-  })
-  .option('port', {
-    desc: 'Set the port of the database',
-    alias: 'po',
-    default: 6379,
-    demandOption: true
-  })
-  .option('interval', {
-    desc: 'Set the interval of the publisher in [ms]',
-    alias: 'i',
-    default: 10',
-    demandOption: true
-  })
-  .option('key', {
-    desc: 'Set the key for either publishing or subscribing',
-    alias: 'k',
-    default: 'foobar-[i]',
-    demandOption: true
-  })
-  .options('password', {
-    desc: 'Set the password for the database',
-    alias: 'p',
-    default: 'admin',
-    demandOption: true
-  })
   // define the column size
   .wrap(60)
   // display the version in the package.json

@@ -1,33 +1,30 @@
 Verify-PubSub
 ===========================
-
-This command line tool aims to verify that all the published messages are received by the subscribers.
-It verifies if messages are firstly in the correct order and secondly without any loss / continuous.
+# Description
+This command line tool aims to verify whether you encounter loss off messges in a pub sub setup.
+It checks that all published messages are received by the subscribers
+and makes sure, firstly that they're in the correct order and secondly continuous - without loss of messages.
 
 The tool was initially developed for detecting network problems by running it within more complex cloud setups.
-
 
 In its core, it's database agnostic but has specializations for each database.
 
 Currently supported databases:
 - redis
 
-#Usage
+# Usage
 
 ```
-// publish [dbtype] [host] [port] [password] [key] [interval]
-./verify-pubsub publish redis localhost 6379 admin fooBar 10
+/verify-pubsub publish -dbtype redis -interval 10 -host localhost -port 6379 -password somePassword -key fooBar
 ```
 
-
 ```
-// subscribe [dbtype] [host] [port] [password] [key]
-./verify-pubsub subscribe redis localhost 6379 admin fooBar
+/verify-pubsub subscribe -dbtype redis -host localhost -port 6379 -password somePassword -key fooBar
 ```
 
 ---
 
-#License
+# License
 
 Copyright (c) 2018 Robin Fehr
 

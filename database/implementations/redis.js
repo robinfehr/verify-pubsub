@@ -1,7 +1,5 @@
-const util = require('util');
 const Base = require('../base');
 const redis = require('redis');
-
 
 module.exports = class Redis extends Base {
   constructor(options) {
