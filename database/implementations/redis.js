@@ -1,4 +1,4 @@
-const Base = require('../base');
+const Base = require('./base');
 const redis = require('redis');
 
 module.exports = class Redis extends Base {
@@ -27,10 +27,11 @@ module.exports = class Redis extends Base {
   }
 
   connect(callback) {
-    const calledBack = false;
+    let calledBack = false;
     const options = this.options;
 
-    this.client = new redis.createClient(options.port || options.socket, options.host, options));
+    this.client = new redis.createClient(options.port || options.socket, options.host, options);
+    console.log('should have set the client')
 
     if (options.password) {
       this.client.auth(options.password, (err) => {
@@ -59,6 +60,7 @@ module.exports = class Redis extends Base {
     });
 
     this.client.on('connect', () => {
+      console.log('Connectred to Redis');
       if (options.db) {
         this.client.send_anyways = true;
         this.client.select(options.db);

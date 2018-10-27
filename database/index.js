@@ -1,7 +1,7 @@
-const exists = require('./utils/exists');
+const exists = require('../utils/exists');
 const tolerate = require('tolerance');
 
-function couldFindDbSDKModule() {
+function couldFindDbSDKModule(err) {
   const inlcudesCantFindModule = err.message.includes('Cannot find module');
   const containsApostrophe = err.message.indexOf("'") > 0;
   const lastApostropheIsNotFirst = err.message.lastIndexOf("'") !== err.message.indexOf("'");
@@ -11,10 +11,11 @@ function couldFindDbSDKModule() {
 function getSpecificDbImplementation(options) {
   options.database = options.database.toLowerCase();
 
-  var dbPath = __dirname + "./" + options.database + ".js";
+  var dbPath = __dirname + "/implementations/" + options.database + ".js";
   if (!exists(dbPath)) {
-    var errMsg = 'Implementation for db "' + options.database + '" does not exist!';
-    console.log(errMsg);
+    var errMsg = `Implementation for db ${options.database} does not exist!
+      Implement the specific database here: ${dbPath}`;
+    console.error(errMsg);
     throw new Error(errMsg);
   }
 
@@ -50,24 +51,28 @@ function connectDb(options, callback) {
         dbInstance.connect(callback);
       },
       options.timeout || 0,
-      callback || () => {}
+      callback || function () {}
       );
     });
   }
-  return dbInstance;
 }
 
 module.exports = class DbWrapper {
-  constructor(options) {
+  constructor(options, callback) {
     this.options = options;
-    this.dbInstance = connectDb(options);
+    connectDb(options, (err, dbInstance) => {
+      if (!err) {
+        this.dbInstance = dbInstance;
+        callback(this);
+      }
+    });
   }
 
   startPublish(key, interval) {
     setInterval(() => {
       this.dbInstance.publish(key, count);
     }, interval);
-  },
+  }
 
   startSubscribe(key) {
     this.dbInstance.subscribe(key, (channel, countPublished) => {
