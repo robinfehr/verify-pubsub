@@ -60,7 +60,7 @@ module.exports = class Redis extends Base {
     });
 
     this.client.on('connect', () => {
-      console.log('Connectred to Redis');
+      console.log('Connected to Redis');
       if (options.db) {
         this.client.send_anyways = true;
         this.client.select(options.db);
@@ -100,7 +100,7 @@ module.exports = class Redis extends Base {
       callback(channel, countPublished);
     });
     this.client.subscribe(key);
-    console.info(`Subscribed to the key ${key}`);
+    console.info(`Subscribing to the key ${key}`);
   }
 
   stopHeartbeat() {

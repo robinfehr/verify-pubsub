@@ -1,4 +1,5 @@
 const exists = require('../utils/exists');
+const printProgress = require('../utils/print').printProgress;
 const tolerate = require('tolerance');
 
 function couldFindDbSDKModule(err) {
@@ -60,6 +61,7 @@ function connectDb(options, callback) {
 module.exports = class DbWrapper {
   constructor(options, callback) {
     this.options = options;
+    this.count = 0;
     connectDb(options, (err, dbInstance) => {
       if (!err) {
         this.dbInstance = dbInstance;
@@ -69,18 +71,21 @@ module.exports = class DbWrapper {
   }
 
   startPublish(key, interval) {
+    console.info(`Start publishing with the interval ${interval}`);
     setInterval(() => {
-      this.dbInstance.publish(key, count);
+      printProgress(`Publishing count: ${this.count} to the key: ${key}`)
+      this.dbInstance.publish(key, this.count);
+      this.count++;
     }, interval);
   }
 
   startSubscribe(key) {
     this.dbInstance.subscribe(key, (channel, countPublished) => {
       if (channel === key) {
-        count++;
+        this.count++;
         if (countPublished !== this.count) {
           // This is the whole point of the app ;)
-          console.warn(new Date(), `Lost messages. Count published: ${countPublished}, Count subscriber: ${count}`);
+          console.warn(new Date(), `Lost messages. Count published: ${countPublished}, Count subscriber: ${this.count}`);
         }
       }
     });
