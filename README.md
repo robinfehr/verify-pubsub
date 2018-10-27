@@ -15,12 +15,16 @@ Currently supported databases:
 # Usage
 
 ```
-verify-pubsub publish -dbtype redis -interval 10 -host localhost -port 6379 -password somePassword -key fooBar
+verify-pubsub publish --dbtype redis --interval 10 --host localhost --port 6379 --password somePassword --key fooBar
 ```
 
 ```
-verify-pubsub subscribe -dbtype redis -host localhost -port 6379 -password somePassword -key fooBar
+verify-pubsub subscribe --dbtype redis --host localhost --port 6379 --password somePassword --key fooBar
 ```
+
+Optional note:
+The publisher starts publishing immetiadely. If you don't want to miss any message you might want to
+setup the subscribers first.
 
 ---
 
