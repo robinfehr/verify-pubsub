@@ -72,22 +72,24 @@ module.exports = class DbWrapper {
 
   startPublish(key, interval) {
     console.info(`Start publishing with the interval ${interval}`);
-    setInterval(() => {
+    const publishInterval = setInterval(() => {
       printProgress(`Publishing count: ${this.count} to the key: ${key}`)
       this.dbInstance.publish(key, this.count);
       this.count++;
     }, interval);
+    this.dbInstance.setPublishInterval(publishInterval);
   }
 
   startSubscribe(key) {
     this.dbInstance.subscribe(key, (channel, countPublished) => {
       if (channel === key) {
-        this.count++;
-        printProgress(`Count publsihed: ${countPublished}, Count subscriber: ${this.count}`);
-        if (countPublished !== this.count) {
+        if (Number(countPublished) !== Number(this.count)) {
           // This is the whole point of the app ;)
-          console.warn(new Date(), `Lost messages. Count published: ${countPublished}, Count subscriber: ${this.count}`);
+          console.warn(`Lost messages. Count published: ${countPublished}, Count subscriber: ${this.count}, Time: ${new Date()}`);
+        } else {
+          printProgress(`Count publsihed: ${countPublished}, Count subscriber: ${this.count}`);
         }
+        this.count++;
       }
     });
   }

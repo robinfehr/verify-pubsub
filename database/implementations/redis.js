@@ -99,6 +99,7 @@ module.exports = class Redis extends Base {
 
   disconnect(callback) {
     this.stopHeartbeat();
+    this.stopPublishing();
 
     if (this.clientPubSub) {
       this.clientPubSub.end(true);
@@ -115,6 +116,10 @@ module.exports = class Redis extends Base {
     this.clientPubSub.publish(key, count);
   }
 
+  setPublishInterval(interval) {
+    this.publishInterval = interval;
+  }
+
   subscribe(key, callback) {
     this.clientPubSub.on('message', (channel, countPublished) => {
       callback(channel, countPublished);
@@ -125,8 +130,17 @@ module.exports = class Redis extends Base {
 
   stopHeartbeat() {
     if (this.infoInterval) {
+      console.info('Redis - Stopping the Info interval');
       clearInterval(this.infoInterval);
       delete this.infoInterval;
+    }
+  }
+
+  stopPublishing() {
+    if (this.publishInterval) {
+      console.info('Redis - Stopping the Publish interval');
+      clearInterval(this.publishInterval);
+      delete this.publishInterval;
     }
   }
 
