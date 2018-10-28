@@ -10,11 +10,11 @@ module.exports = class Redis extends Base {
     if (!options.password) throw new Error('Redis - Password not specified');
 
     const defaults = {
-      max_attempts: 1,
-      retry_strategy: function (options) {
-        return undefined;
-      },
       infoBeat: 10 * 1000, // all 10 seconds
+      retry_strategy: (options) => {
+        console.log(options);
+        return undefined;
+      }
     };
 
     this.notified = {
@@ -30,8 +30,8 @@ module.exports = class Redis extends Base {
     let calledBack = false;
     const options = this.options;
 
-    this.client = new redis.createClient(options.port || options.socket, options.host, options);
-    console.log('should have set the client')
+    this.clientPubSub = new redis.createClient(options.port || options.socket, options.host, options);
+    this.clientHeartBeat = new redis.createClient(options.port || options.socket, options.host, options);
 
     if (options.password) {
       this.client.auth(options.password, (err) => {
@@ -45,21 +45,36 @@ module.exports = class Redis extends Base {
     }
 
     if (options.db) {
-      this.client.select(options.db);
+      this.clientPubSub.select(options.db);
+      this.clientHeartBeat.select(options.db);
     }
 
-    this.client.on('end', () => {
-      this.disconnect(); this.stopHeartbeat();
+    // End - for both heartbeat and pubsub
+    this.clientPubSub.on('end', () => {
+      console.log('Redis - End PubSub')
+      this.disconnect();
+    });
+    this.clientHeartBeat.on('end', () => {
+      console.log('Redis - End Info')
+      this.disconnect();
     });
 
-    this.client.on('error', (err) => {
+    // Error - for both heartbeat and pubsub
+    this.clientPubSub.on('error', (err) => {
+      console.error(err);
+      if (calledBack) return;
+      calledBack = true;
+      if (callback) callback(null, this);
+    });
+    this.clientHeartBeat.on('error', (err) => {
       console.error(err);
       if (calledBack) return;
       calledBack = true;
       if (callback) callback(null, this);
     });
 
-    this.client.on('connect', () => {
+    // Connected - for pubsub only
+    this.clientPubSub.on('connect', () => {
       console.log('Connected to Redis');
       if (options.db) {
         this.client.send_anyways = true;
@@ -76,7 +91,8 @@ module.exports = class Redis extends Base {
       if (callback) callback(null, this);
     });
 
-    this.client.on('subscribe', (key) => {
+    // Subscriptions - for pubsub only
+    this.clientPubSub.on('subscribe', (key) => {
       console.info(`A subscriber got attached to the key: ${key}`);
     });
   }
@@ -84,22 +100,26 @@ module.exports = class Redis extends Base {
   disconnect(callback) {
     this.stopHeartbeat();
 
-    if (this.client) {
-      this.client.end(true);
+    if (this.clientPubSub) {
+      this.clientPubSub.end(true);
     }
-    this.emit('disconnect');
+    if (this.clientHeartBeat) {
+      this.clientHeartBeat.end(true);
+    }
+    console.info('Redis - disconnect');
+
     if (callback) callback(null, this);
   }
 
   publish(key, count) {
-    this.client.publish(key, count);
+    this.clientPubSub.publish(key, count);
   }
 
   subscribe(key, callback) {
-    this.client.on('message', (channel, countPublished) => {
+    this.clientPubSub.on('message', (channel, countPublished) => {
       callback(channel, countPublished);
     });
-    this.client.subscribe(key);
+    this.clientPubSub.subscribe(key);
     console.info(`Subscribing to the key ${key}`);
   }
 
@@ -112,16 +132,16 @@ module.exports = class Redis extends Base {
 
   startHearbeat() {
     const gracePeriod = Math.round(this.options.infoBeat / 2);
-    this.infoBeatInterval = setInterval(function () {
+    this.infoInterval = setInterval(() => {
       // Abort if client info command takes too long
       const graceTimer = setTimeout(() => {
-        if (this.infoBeatInterval) {
+        if (this.infoInterval) {
           console.error((new Error ('Info timed out after ' + gracePeriod + 'ms (redis)')).stack);
           this.disconnect();
         }
       }, gracePeriod);
 
-      this.client.info((err) => {
+      this.clientHeartBeat.info((err) => {
         if (graceTimer) clearTimeout(graceTimer);
         if (err) {
           console.error(err.stack || err);

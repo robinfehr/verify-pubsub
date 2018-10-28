@@ -83,6 +83,7 @@ module.exports = class DbWrapper {
     this.dbInstance.subscribe(key, (channel, countPublished) => {
       if (channel === key) {
         this.count++;
+        printProgress(`Count publsihed: ${countPublished}, Count subscriber: ${this.count}`);
         if (countPublished !== this.count) {
           // This is the whole point of the app ;)
           console.warn(new Date(), `Lost messages. Count published: ${countPublished}, Count subscriber: ${this.count}`);

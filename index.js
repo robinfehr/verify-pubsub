@@ -34,6 +34,7 @@ require('yargs')
       alias: 'p',
     })
   } , (argv) => {
+    console.info('Publish - Starting to setup the db connection');
     new dbWrapper({
       database: argv.dbtype,
       host: argv.host,
@@ -77,6 +78,7 @@ require('yargs')
         alias: 'p',
       })
   }, (argv) => {
+    console.info('Subscribe - Starting to setup the db connection');
     new dbWrapper({
       database: argv.dbtype,
       host: argv.host,
