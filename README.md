@@ -1,6 +1,6 @@
 Verify-PubSub
 ===========================
-# Description
+## Description
 This command line tool aims to verify whether you encounter loss off messges in a pub sub setup.
 It checks that all published messages are received by the subscribers
 and makes sure, firstly that they're in the correct order and secondly continuous - without loss of messages.
@@ -12,23 +12,48 @@ In its core, it's database agnostic but has specializations for each database.
 Currently supported databases:
 - redis
 
-# Usage
-
-```
-verify-pubsub publish --dbtype redis --interval 10 --host localhost --port 6379 --password somePassword --key fooBar
-```
-
-```
-verify-pubsub subscribe --dbtype redis --host localhost --port 6379 --password somePassword --key fooBar
-```
-
-Optional note:
+note:
 The publisher starts publishing immetiadely. If you don't want to miss any message you might want to
 setup the subscribers first.
 
+## Installation
+```
+npm install verify-pubsub -s
+```
+
+## Usage
+
+Publish:
+```js
+const dbWrapper = require('verify-pubsub');
+new dbWrapper({
+  database: 'redis',
+  host: 'localhost',
+  port: '6379' ,
+  password: 'somePassword'
+}, (db) => {
+  // key, interval
+  db.startPublish('someKey', 5);
+});
+```
+
+Subscribe:
+
+```js
+const dbWrapper = require('verify-pubsub');
+new dbWrapper({
+  database: 'redis',
+  host: 'localhost',
+  port: '6379' ,
+  password: 'somePassword'
+}, (db) => {
+  db.startSubscribe('someKey');
+});
+```
+
 ---
 
-# License
+## License
 
 Copyright (c) 2018 Robin Fehr
 
