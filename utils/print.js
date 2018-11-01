@@ -3,6 +3,6 @@ module.exports = {
   printProgress:  (progress) => {
     readline.clearLine();
     readline.cursorTo(0);
-    readline.write(progress + '%');
+    process.stdout.write(progress + '%');
   }
 }
