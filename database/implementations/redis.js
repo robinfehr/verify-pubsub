@@ -36,7 +36,11 @@ module.exports = class Redis extends Base {
     console.info('Heartbeat client created');
 
     if (options.password) {
+      console.info('Heartbeat client authentication starting');
       this.clientHeartBeat.auth(options.password, (err) => {
+        if (err) {
+          console.error('Heartbeat client authentication failed');
+        }
         if (err && !calledBack && callback) {
           calledBack = true;
           if (callback) callback(err);
@@ -46,14 +50,17 @@ module.exports = class Redis extends Base {
         console.info('Heartbeat client authenticated');
       });
 
-      this.cliebtPubSub.auth(options.password, (err) => {
+      console.info('Pubsub client authentication starting');
+      this.clientPubSub.auth(options.password, (err) => {
+        if (err) {
+          console.error('Pubsub client authentication failed');
+        }
         if (err && !calledBack && callback) {
           calledBack = true;
           if (callback) callback(err);
           return;
         }
         if (err) throw err;
-        console.info('Pubsub client authenticated');
       });
     }
 
