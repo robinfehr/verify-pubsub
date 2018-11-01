@@ -22,7 +22,7 @@ module.exports = class Redis extends Base {
     };
     this.options = {
       ...defaults,
-      options
+      ...options
     };
   }
 
