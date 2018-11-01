@@ -12,7 +12,7 @@ module.exports = class Redis extends Base {
     const defaults = {
       infoBeat: 10 * 1000, // all 10 seconds
       retry_strategy: (options) => {
-        console.log(options);
+        console.info(options);
         return undefined;
       }
     };
@@ -31,16 +31,29 @@ module.exports = class Redis extends Base {
     const options = this.options;
 
     this.clientPubSub = new redis.createClient(options.port || options.socket, options.host, options);
+    console.info('Pubsub client created');
     this.clientHeartBeat = new redis.createClient(options.port || options.socket, options.host, options);
+    console.info('Heartbeat client created');
 
     if (options.password) {
-      this.client.auth(options.password, (err) => {
+      this.clientHeartBeat.auth(options.password, (err) => {
         if (err && !calledBack && callback) {
           calledBack = true;
-          if (callback) callback(err, this);
+          if (callback) callback(err);
           return;
         }
         if (err) throw err;
+        console.info('Heartbeat client authenticated');
+      });
+
+      this.cliebtPubSub.auth(options.password, (err) => {
+        if (err && !calledBack && callback) {
+          calledBack = true;
+          if (callback) callback(err);
+          return;
+        }
+        if (err) throw err;
+        console.info('Pubsub client authenticated');
       });
     }
 
@@ -51,11 +64,11 @@ module.exports = class Redis extends Base {
 
     // End - for both heartbeat and pubsub
     this.clientPubSub.on('end', () => {
-      console.log('Redis - End PubSub')
+      console.info('Redis - End PubSub')
       this.disconnect();
     });
     this.clientHeartBeat.on('end', () => {
-      console.log('Redis - End Info')
+      console.info('Redis - End Info')
       this.disconnect();
     });
 
@@ -75,7 +88,7 @@ module.exports = class Redis extends Base {
 
     // Connected - for pubsub only
     this.clientPubSub.on('connect', () => {
-      console.log('Connected to Redis');
+      console.info('Connected to Redis');
       if (options.db) {
         this.client.send_anyways = true;
         this.client.select(options.db);
