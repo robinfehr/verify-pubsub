@@ -1,7 +1,8 @@
+const readline = require('readline');
 module.exports = {
   printProgress:  (progress) => {
-    process.stdout.clearLine();
-    process.stdout.cursorTo(0);
-    process.stdout.write(progress + '%');
+    readline.clearLine();
+    readline.cursorTo(0);
+    readline.write(progress + '%');
   }
 }
