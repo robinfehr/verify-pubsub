@@ -17,9 +17,6 @@ module.exports = class Redis extends Base {
       }
     };
 
-    this.notified = {
-      subscribers: false
-    };
     this.options = {
       ...defaults,
       ...options

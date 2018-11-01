@@ -60,9 +60,17 @@ function connectDb(options, callback) {
 
 module.exports = class DbWrapper {
   constructor(options, callback) {
-    this.options = options;
+    const defaults = {
+      progress: false
+    };
+
+    this.options = {
+      ...defaults,
+      ...options
+    };
+
     this.count = 0;
-    connectDb(options, (err, dbInstance) => {
+    connectDb(this.options, (err, dbInstance) => {
       if (!err) {
         this.dbInstance = dbInstance;
         callback(this);
@@ -71,9 +79,12 @@ module.exports = class DbWrapper {
   }
 
   startPublish(key, interval) {
-    console.info(`Start publishing with the interval ${interval}`);
+    const showProgress = this.options.progress;
+    console.info(`Start publishing to the key ${key} with the interval ${interval}`);
     const publishInterval = setInterval(() => {
-      printProgress(`Publishing count: ${this.count} to the key: ${key}`)
+      if (showProgress) {
+        printProgress(`Publishing count: ${this.count} to the key: ${key}`)
+      }
       this.dbInstance.publish(key, this.count);
       this.count++;
     }, interval);
@@ -81,13 +92,16 @@ module.exports = class DbWrapper {
   }
 
   startSubscribe(key) {
+    const showProgress = this.options.progress;
     this.dbInstance.subscribe(key, (channel, countPublished) => {
       if (channel === key) {
         if (Number(countPublished) !== Number(this.count)) {
           // This is the whole point of the app ;)
           console.warn(`Lost messages. Count published: ${countPublished}, Count subscriber: ${this.count}, Time: ${new Date()}`);
         } else {
-          printProgress(`Count publsihed: ${countPublished}, Count subscriber: ${this.count}`);
+          if (showProgress) {
+            printProgress(`Count publsihed: ${countPublished}, Count subscriber: ${this.count}`);
+          }
         }
         this.count++;
       }
