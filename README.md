@@ -30,7 +30,8 @@ new dbWrapper({
   database: 'redis',
   host: 'localhost',
   port: '6379' ,
-  password: 'somePassword'
+  password: 'somePassword',
+  progresss: true
 }, (db) => {
   // key, interval
   db.startPublish('someKey', 5);
@@ -45,7 +46,8 @@ new dbWrapper({
   database: 'redis',
   host: 'localhost',
   port: '6379' ,
-  password: 'somePassword'
+  password: 'somePassword',
+  progress: true
 }, (db) => {
   db.startSubscribe('someKey');
 });
