@@ -69,7 +69,7 @@ module.exports = class DbWrapper {
       ...options
     };
 
-    this.count = 0;
+    this.count = null;
     connectDb(this.options, (err, dbInstance) => {
       if (!err) {
         this.dbInstance = dbInstance;
@@ -80,6 +80,8 @@ module.exports = class DbWrapper {
 
   startPublish(key, interval) {
     const showProgress = this.options.progress;
+    this.count = 0;
+
     console.info(`Start publishing to the key ${key} with the interval ${interval}`);
     const publishInterval = setInterval(() => {
       if (showProgress) {
@@ -95,6 +97,11 @@ module.exports = class DbWrapper {
     const showProgress = this.options.progress;
     this.dbInstance.subscribe(key, (channel, countPublished) => {
       if (channel === key) {
+        // If we have no count we'll take the published to init it.
+        // We therefore can attach subscirbers at any time.
+        if (this.count === null) {
+          this.count = countPublished;
+        }
         if (Number(countPublished) !== Number(this.count)) {
           // This is the whole point of the app ;)
           console.warn(`Lost messages. Count published: ${countPublished}, Count subscriber: ${this.count}, Time: ${new Date()}`);
