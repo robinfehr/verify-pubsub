@@ -4,6 +4,7 @@ const redis = require('redis');
 module.exports = class Redis extends Base {
   constructor(options) {
     super();
+    this.logger = options.logger;
 
     if (!options.host) throw new Error('Redis - Host not specified');
     if (!options.port) throw new Error('Redis - Port not specified');
@@ -12,7 +13,7 @@ module.exports = class Redis extends Base {
     const defaults = {
       infoBeat: 10 * 1000, // all 10 seconds
       retry_strategy: (options) => {
-        console.info(options);
+        this.logger.info(options);
         return undefined;
       }
     };
@@ -28,15 +29,15 @@ module.exports = class Redis extends Base {
     const options = this.options;
 
     this.clientPubSub = new redis.createClient(options.port || options.socket, options.host, options);
-    console.info('Pubsub client created');
+    this.logger.info('Pubsub client created');
     this.clientHeartBeat = new redis.createClient(options.port || options.socket, options.host, options);
-    console.info('Heartbeat client created');
+    this.logger.info('Heartbeat client created');
 
     if (options.password) {
-      console.info('Heartbeat client authentication starting');
+      this.logger.info('Heartbeat client authentication starting');
       this.clientHeartBeat.auth(options.password, (err) => {
         if (err) {
-          console.error('Heartbeat client authentication failed');
+          this.logger.error('Heartbeat client authentication failed');
         }
         if (err && !calledBack && callback) {
           calledBack = true;
@@ -44,13 +45,13 @@ module.exports = class Redis extends Base {
           return;
         }
         if (err) throw err;
-        console.info('Heartbeat client authenticated');
+        this.logger.info('Heartbeat client authenticated');
       });
 
-      console.info('Pubsub client authentication starting');
+      this.logger.info('Pubsub client authentication starting');
       this.clientPubSub.auth(options.password, (err) => {
         if (err) {
-          console.error('Pubsub client authentication failed');
+          this.logger.error('Pubsub client authentication failed');
         }
         if (err && !calledBack && callback) {
           calledBack = true;
@@ -68,23 +69,23 @@ module.exports = class Redis extends Base {
 
     // End - for both heartbeat and pubsub
     this.clientPubSub.on('end', () => {
-      console.info('Redis - End PubSub')
+      this.logger.info('Redis - End PubSub')
       this.disconnect();
     });
     this.clientHeartBeat.on('end', () => {
-      console.info('Redis - End Info')
+      this.logger.info('Redis - End Info')
       this.disconnect();
     });
 
     // Error - for both heartbeat and pubsub
     this.clientPubSub.on('error', (err) => {
-      console.error(err);
+      this.logger.error(err);
       if (calledBack) return;
       calledBack = true;
       if (callback) callback(null, this);
     });
     this.clientHeartBeat.on('error', (err) => {
-      console.error(err);
+      this.logger.error(err);
       if (calledBack) return;
       calledBack = true;
       if (callback) callback(null, this);
@@ -92,7 +93,7 @@ module.exports = class Redis extends Base {
 
     // Connected - for pubsub only
     this.clientPubSub.on('connect', () => {
-      console.info('Connected to Redis');
+      this.logger.info('Connected to Redis');
       if (options.db) {
         this.client.send_anyways = true;
         this.client.select(options.db);
@@ -110,7 +111,7 @@ module.exports = class Redis extends Base {
 
     // Subscriptions - for pubsub only
     this.clientPubSub.on('subscribe', (key) => {
-      console.info(`A subscriber got attached to the key: ${key}`);
+      this.logger.info(`A subscriber got attached to the key: ${key}`);
     });
   }
 
@@ -124,7 +125,7 @@ module.exports = class Redis extends Base {
     if (this.clientHeartBeat) {
       this.clientHeartBeat.end(true);
     }
-    console.info('Redis - disconnect');
+    this.logger.info('Redis - disconnect');
 
     if (callback) callback(null, this);
   }
@@ -142,12 +143,12 @@ module.exports = class Redis extends Base {
       callback(channel, countPublished);
     });
     this.clientPubSub.subscribe(key);
-    console.info(`Subscribing to the key ${key}`);
+    this.logger.info(`Subscribing to the key ${key}`);
   }
 
   stopHeartbeat() {
     if (this.infoInterval) {
-      console.info('Redis - Stopping the Info interval');
+      this.logger.info('Redis - Stopping the Info interval');
       clearInterval(this.infoInterval);
       delete this.infoInterval;
     }
@@ -155,7 +156,7 @@ module.exports = class Redis extends Base {
 
   stopPublishing() {
     if (this.publishInterval) {
-      console.info('Redis - Stopping the Publish interval');
+      this.logger.info('Redis - Stopping the Publish interval');
       clearInterval(this.publishInterval);
       delete this.publishInterval;
     }
@@ -167,7 +168,7 @@ module.exports = class Redis extends Base {
       // Abort if client info command takes too long
       const graceTimer = setTimeout(() => {
         if (this.infoInterval) {
-          console.error((new Error ('Info timed out after ' + gracePeriod + 'ms (redis)')).stack);
+          this.logger.error((new Error ('Info timed out after ' + gracePeriod + 'ms (redis)')).stack);
           this.disconnect();
         }
       }, gracePeriod);
@@ -175,7 +176,7 @@ module.exports = class Redis extends Base {
       this.clientHeartBeat.info((err) => {
         if (graceTimer) clearTimeout(graceTimer);
         if (err) {
-          console.error(err.stack || err);
+          this.logger.error(err.stack || err);
           return this.disconnect();
         }
       });
