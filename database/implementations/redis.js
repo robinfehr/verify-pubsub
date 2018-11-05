@@ -32,10 +32,21 @@ module.exports = class Redis extends Base {
     let calledBack = false;
     const options = this.options;
 
+    console.log('before create client 1');
     this.clientPubSub = new redis.createClient(options.port || options.socket, options.host, options);
+    console.log('after create client 1');
+
+    console.log('before pubsub 1');
     this.logger.info('Pubsub client created');
+    console.log('after pubsub 1');
+
+    console.log('before create client 2');
     this.clientHeartBeat = new redis.createClient(options.port || options.socket, options.host, options);
+    console.log('after create client 2');
+
+    console.log('before h1');
     this.logger.info('Heartbeat client created');
+    console.log('after h1');
 
     if (options.password) {
       console.log('before heatbeat start');
