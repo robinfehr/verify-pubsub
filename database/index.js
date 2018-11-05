@@ -9,8 +9,7 @@ function couldFindDbSDKModule(err) {
   return inlcudesCantFindModule && containsApostrophe && lastApostropheIsNotFirst
 }
 
-function getSpecificDbImplementation(options) {
-  const logger = options.logger;
+function getSpecificDbImplementation(options, logger) {
   options.database = options.database.toLowerCase();
 
   var dbPath = __dirname + "/implementations/" + options.database + ".js";
@@ -36,12 +35,13 @@ function getSpecificDbImplementation(options) {
   }
 }
 
-function connectDb(options, callback) {
+function connectDb(options, logger, callback) {
   let db = null;
   let dbInstance = null;
+
   try {
     db = getSpecificDbImplementation(options);
-    dbInstance = new db(options);
+    dbInstance = new db(options, logger);
   } catch (err) {
     if (callback) callback(err);
     throw err;
@@ -61,33 +61,31 @@ function connectDb(options, callback) {
 
 module.exports = class DbWrapper {
   constructor(options, callback) {
-    const defaults = {
-      progress: false,
-      logger: console
-    };
+    this.showProgress = options.progress;
+    this.logger = options.logger;
+    // Delete the unnec. options for the specific db implementations
+    delete options.logger;
+    delete options.progress;
 
-    this.options = {
-      ...defaults,
-      ...options
-    };
-
+    this.options = options;
     this.count = null;
-    connectDb(this.options, (err, dbInstance) => {
+
+    connectDb(this.options, this.logger, (err, dbInstance) => {
       if (!err) {
         this.dbInstance = dbInstance;
         callback(this);
+      } else {
+        this.logger.error(err);
       }
     });
   }
 
   startPublish(key, interval) {
-    const logger = this.options.logger;
-    const showProgress = this.options.progress;
     this.count = 0;
 
-    logger.info(`Start publishing to the key ${key} with the interval ${interval}`);
+    this.logger.info(`Start publishing to the key ${key} with the interval ${interval}`);
     const publishInterval = setInterval(() => {
-      if (showProgress) {
+      if (this.showProgress) {
         printProgress(`Publishing count: ${this.count} to the key: ${key}`)
       }
       this.dbInstance.publish(key, this.count);
@@ -97,7 +95,6 @@ module.exports = class DbWrapper {
   }
 
   startSubscribe(key) {
-    const showProgress = this.options.progress;
     this.dbInstance.subscribe(key, (channel, countPublished) => {
       if (channel === key) {
         // If we have no count we'll take the published to init it.
@@ -107,9 +104,9 @@ module.exports = class DbWrapper {
         }
         if (Number(countPublished) !== Number(this.count)) {
           // This is the whole point of the app ;)
-          logger.warn(`Lost messages. Count published: ${countPublished}, Count subscriber: ${this.count}, Time: ${new Date()}`);
+          this.logger.warn(`Lost messages. Count published: ${countPublished}, Count subscriber: ${this.count}, Time: ${new Date()}`);
         } else {
-          if (showProgress) {
+          if (this.showProgress) {
             printProgress(`Count publsihed: ${countPublished}, Count subscriber: ${this.count}`);
           }
         }
