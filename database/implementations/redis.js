@@ -5,6 +5,7 @@ module.exports = class Redis extends Base {
   constructor(options) {
     super();
     this.logger = options.logger;
+    console.info('Redis - Logger instantiated', this.logger);
 
     if (!options.host) throw new Error('Redis - Host not specified');
     if (!options.port) throw new Error('Redis - Port not specified');
