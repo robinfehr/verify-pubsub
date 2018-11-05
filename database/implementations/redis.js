@@ -5,6 +5,7 @@ module.exports = class Redis extends Base {
   constructor(options) {
     super();
     this.logger = options.logger;
+    delete options.logger;
     console.log('Redis - Logger starting init', this.logger);
     this.logger.info('Redis - Logger initiated', this.logger);
 
