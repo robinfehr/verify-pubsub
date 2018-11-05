@@ -30,7 +30,7 @@ function getSpecificDbImplementation(options) {
         err.message.indexOf("'") + 1,
         err.message.lastIndexOf("'")
       );
-      logger.log(`Please install module ${moduleName} to work with db implementation ${options.database}!`);
+      logger.debug(`Please install module ${moduleName} to work with db implementation ${options.database}!`);
     }
     throw err;
   }
@@ -63,7 +63,7 @@ module.exports = class DbWrapper {
   constructor(options, callback) {
     const defaults = {
       progress: false,
-      logger: options.logger || console
+      logger: console
     };
 
     this.options = {
