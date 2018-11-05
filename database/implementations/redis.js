@@ -32,6 +32,7 @@ module.exports = class Redis extends Base {
   connect(callback) {
     let calledBack = false;
     const options = this.options;
+    console.log('left over ones', options);
 
     console.log('before create client 1');
     this.clientPubSub = new redis.createClient(options.port || options.socket, options.host, options);
