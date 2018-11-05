@@ -5,7 +5,8 @@ module.exports = class Redis extends Base {
   constructor(options) {
     super();
     this.logger = options.logger;
-    console.info('Redis - Logger instantiated', this.logger);
+    console.log('Redis - Logger starting init', this.logger);
+    this.logger.info('Redis - Logger initiated', this.logger);
 
     if (!options.host) throw new Error('Redis - Host not specified');
     if (!options.port) throw new Error('Redis - Port not specified');
@@ -14,7 +15,9 @@ module.exports = class Redis extends Base {
     const defaults = {
       infoBeat: 10 * 1000, // all 10 seconds
       retry_strategy: (options) => {
+        console.log('before retry');
         this.logger.info(options);
+        console.log('after retry');
         return undefined;
       }
     };
@@ -35,10 +38,14 @@ module.exports = class Redis extends Base {
     this.logger.info('Heartbeat client created');
 
     if (options.password) {
+      console.log('before heatbeat start');
       this.logger.info('Heartbeat client authentication starting');
+      console.log('after heatbeat start');
       this.clientHeartBeat.auth(options.password, (err) => {
         if (err) {
+          console.log('before auth fail');
           this.logger.error('Heartbeat client authentication failed');
+          console.log('after auth fail');
         }
         if (err && !calledBack && callback) {
           calledBack = true;
@@ -46,13 +53,19 @@ module.exports = class Redis extends Base {
           return;
         }
         if (err) throw err;
+        console.log('before auth ok');
         this.logger.info('Heartbeat client authenticated');
+        console.log('after auth ok');
       });
 
+      console.log('before pubsub start');
       this.logger.info('Pubsub client authentication starting');
+      console.log('after pubsub start');
       this.clientPubSub.auth(options.password, (err) => {
         if (err) {
+          console.log('before auth ok pubsub');
           this.logger.error('Pubsub client authentication failed');
+          console.log('after auth ok pubsub');
         }
         if (err && !calledBack && callback) {
           calledBack = true;
@@ -70,23 +83,31 @@ module.exports = class Redis extends Base {
 
     // End - for both heartbeat and pubsub
     this.clientPubSub.on('end', () => {
+      console.log('before pubsub end');
       this.logger.info('Redis - End PubSub')
+      console.log('after pubsub end');
       this.disconnect();
     });
     this.clientHeartBeat.on('end', () => {
+      console.log('before heartbeat end');
       this.logger.info('Redis - End Info')
+      console.log('after heartbeat end');
       this.disconnect();
     });
 
     // Error - for both heartbeat and pubsub
     this.clientPubSub.on('error', (err) => {
+      console.log('before pubsub eror');
       this.logger.error(err);
+      console.log('after pubsub eror');
       if (calledBack) return;
       calledBack = true;
       if (callback) callback(null, this);
     });
     this.clientHeartBeat.on('error', (err) => {
+      console.log('before hearbeat eror');
       this.logger.error(err);
+      console.log('after hearbeat eror');
       if (calledBack) return;
       calledBack = true;
       if (callback) callback(null, this);
@@ -94,7 +115,9 @@ module.exports = class Redis extends Base {
 
     // Connected - for pubsub only
     this.clientPubSub.on('connect', () => {
+      console.log('bfore pubsub connected');
       this.logger.info('Connected to Redis');
+      console.log('aftter pubsub connected');
       if (options.db) {
         this.client.send_anyways = true;
         this.client.select(options.db);
@@ -112,7 +135,9 @@ module.exports = class Redis extends Base {
 
     // Subscriptions - for pubsub only
     this.clientPubSub.on('subscribe', (key) => {
+      console.log('before pubsub subscribed');
       this.logger.info(`A subscriber got attached to the key: ${key}`);
+      console.log('after pubsub subscribed');
     });
   }
 
@@ -126,7 +151,9 @@ module.exports = class Redis extends Base {
     if (this.clientHeartBeat) {
       this.clientHeartBeat.end(true);
     }
+    console.log('before gen. discon');
     this.logger.info('Redis - disconnect');
+    console.log('after gen. discon');
 
     if (callback) callback(null, this);
   }
@@ -144,12 +171,16 @@ module.exports = class Redis extends Base {
       callback(channel, countPublished);
     });
     this.clientPubSub.subscribe(key);
+    console.log('before gen subscribing');
     this.logger.info(`Subscribing to the key ${key}`);
+    console.log('after gen subscribing');
   }
 
   stopHeartbeat() {
     if (this.infoInterval) {
+      console.log('before ge. heartbeat stop');
       this.logger.info('Redis - Stopping the Info interval');
+      console.log('after ge. heartbeat stop');
       clearInterval(this.infoInterval);
       delete this.infoInterval;
     }
