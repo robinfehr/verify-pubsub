@@ -11,6 +11,7 @@ function couldFindDbSDKModule(err) {
 
 function getSpecificDbImplementation(options, logger) {
   options.database = options.database.toLowerCase();
+  logger.info(`Selecting the implementation: ${options.database}`);
 
   var dbPath = __dirname + "/implementations/" + options.database + ".js";
   if (!exists(dbPath)) {
@@ -40,7 +41,7 @@ function connectDb(options, logger, callback) {
   let dbInstance = null;
 
   try {
-    db = getSpecificDbImplementation(options);
+    db = getSpecificDbImplementation(options, logger);
     dbInstance = new db(options, logger);
   } catch (err) {
     if (callback) callback(err);
@@ -62,7 +63,7 @@ function connectDb(options, logger, callback) {
 module.exports = class DbWrapper {
   constructor(options, callback) {
     this.showProgress = options.progress;
-    this.logger = options.logger;
+    this.logger = options.logger || console;
     // Delete the unnec. options for the specific db implementations
     delete options.logger;
     delete options.progress;
@@ -88,21 +89,23 @@ module.exports = class DbWrapper {
       if (this.showProgress) {
         printProgress(`Publishing count: ${this.count} to the key: ${key}`)
       }
-      this.dbInstance.publish(key, this.count);
+      this.dbInstance.set(key, this.count);
       this.count++;
     }, interval);
-    this.dbInstance.setPublishInterval(publishInterval);
+    this.dbInstance.setInterval(publishInterval);
   }
 
-  startSubscribe(key) {
-    this.dbInstance.subscribe(key, (channel, countPublished) => {
-      if (channel === key) {
+  startListen(key, interval) {
+    this.dbInstance.setInterval(interval);
+    this.dbInstance.listen(key, (listenKey, countPublished) => {
+      if (listenKey === key) {
         // If we have no count we'll take the published to init it.
         // We therefore can attach subscirbers at any time.
-        if (this.count === null) {
+        if (!this.count) {
           this.count = countPublished;
         }
-        if (Number(countPublished) !== Number(this.count)) {
+
+        if (countPublished && this.count && Number(countPublished) !== Number(this.count)) {
           // This is the whole point of the app ;)
           this.logger.warn(`Lost messages. Count published: ${countPublished}, Count subscriber: ${this.count}, Time: ${new Date()}`);
         } else {
@@ -110,7 +113,8 @@ module.exports = class DbWrapper {
             printProgress(`Count publsihed: ${countPublished}, Count subscriber: ${this.count}`);
           }
         }
-        this.count++;
+
+        if (this.count) this.count++;
       }
     });
   }

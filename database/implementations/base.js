@@ -22,17 +22,22 @@ module.exports = class Base {
    * Publishes the count to the key specified via argv.
    * Count will be used by the subscirbers to check for message loss.
    * @key  {String} is the key/ channel where the messages get publish to.
+   * @count  {Number} The number we want to publish (we only publiish numbers to verify the test).
+   * @method  {String} Method e.g. use (set / get) or (pub / sub).
    */
-  publish() { throw new NotImplementedError}
+  set(key, count) { throw new NotImplementedError}
   /**
    * Sets the publishInterval which will be closed if an error occurs.
+   * @interval {Number} Id of the interval retrieved by the return value of setInterval.
    */
-  setPublishInterval() { throw new NotImplementedError }
+  setInterval(interval) { throw new NotImplementedError }
   /**
    * Implements the subscription for the above published counts using the API of the database.
    * @key  {String} is the key/ channel where we subscribe to.
+   * @callback  {Function} fn that has to be called on message retrieval.
+   * @method  {String} method e.g. pubusb
    */
-  subscribe() { throw new NotImplementedError}
+  listen(key, callback) { throw new NotImplementedError}
   /**
    * Heartbeat start to check whether the db is up and running.
    * We need to detect a unavailability because we can't guarantee the sucessfullness

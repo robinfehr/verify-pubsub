@@ -9,6 +9,8 @@ module.exports = class Redis extends Base {
     if (!options.password) throw new Error('Redis - Password not specified');
 
     this.logger = logger;
+    this.infoInterval = null;
+    this.publishInterval = null;
 
     const defaults = {
       infoBeat: 10 * 1000, // all 10 seconds
@@ -130,15 +132,17 @@ module.exports = class Redis extends Base {
     if (callback) callback(null, this);
   }
 
-  publish(key, count) {
+  set(key, count) {
+    // count needs to be a number that so that we can verify if the messages
+    // per interval got received properly.
     this.clientPubSub.publish(key, count);
   }
 
-  setPublishInterval(interval) {
+  setInterval(interval) {
     this.publishInterval = interval;
   }
 
-  subscribe(key, callback) {
+  listen(key, callback) {
     this.clientPubSub.on('message', (channel, countPublished) => {
       callback(channel, countPublished);
     });
@@ -150,7 +154,7 @@ module.exports = class Redis extends Base {
     if (this.infoInterval) {
       this.logger.info('Redis - Stopping the Info interval');
       clearInterval(this.infoInterval);
-      delete this.infoInterval;
+      this.infoInterval = null;
     }
   }
 
@@ -158,7 +162,7 @@ module.exports = class Redis extends Base {
     if (this.publishInterval) {
       this.logger.info('Redis - Stopping the Publish interval');
       clearInterval(this.publishInterval);
-      delete this.publishInterval;
+      this.publishInterval = null;
     }
   }
 
